@@ -1,11 +1,15 @@
 package com.jason.cardealership.service.impl;
 
-import com.jason.cardealership.DealershipService;
 import com.jason.cardealership.persistence.model.Car;
-import com.jason.cardealership.persistence.model.repository.CarRepository;
+import com.jason.cardealership.persistence.repository.CarRepository;
+import com.jason.cardealership.service.DealershipService;
 import com.jason.cardealership.util.exceptions.InsufficientRevenueException;
 import com.jason.cardealership.util.exceptions.MalformedYearException;
+import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
 
 import java.time.format.DateTimeParseException;
 import java.util.List;
@@ -13,29 +17,32 @@ import java.util.List;
 import static com.jason.cardealership.util.DealershipUtils.parseYearToInt;
 
 @Slf4j
+@Data
+@Service
 public class DealershipServiceImpl implements DealershipService {
 
-  private long totalRevenue;
+  @Value("${revenue}")
+  private Long revenue;
   private final CarRepository carRepository;
 
-  public DealershipServiceImpl(long initialRevenue, CarRepository carRepository) {
-    this.totalRevenue = initialRevenue;
+  @Autowired
+  public DealershipServiceImpl(CarRepository carRepository) {
     this.carRepository = carRepository;
   }
 
   @Override
   public void sell(Car car) {
-    carRepository.addToRepository(car);
-    totalRevenue += car.getCostInUSD();
-    log.info("Sold car {}. Current revenue: {}", car, totalRevenue);
+    carRepository.removeFromRepository(car.getVin());
+    revenue += car.getCostInUSD();
+    log.info("Sold car {}. Current revenue: {}", car, revenue);
   }
 
   @Override
   public void buy(Car car) {
-    if (totalRevenue >= car.getCostInUSD()) {
+    if (revenue >= car.getCostInUSD()) {
       carRepository.addToRepository(car);
-      totalRevenue -= car.getCostInUSD();
-      log.info("Bought car {}. Current revenue: {}", car, totalRevenue);
+      revenue -= car.getCostInUSD();
+      log.info("Bought car {}. Current revenue: {}", car, revenue);
     } else {
       log.warn("Unable to buy car {}; we're broke!", car);
       throw new InsufficientRevenueException();
@@ -62,7 +69,7 @@ public class DealershipServiceImpl implements DealershipService {
           "Asking repo for all cars of make: {}, model:{} and year: {}", make, model, yearParsed);
       return carRepository.findByMakeModelAndYear(make, model, yearParsed);
     } catch (DateTimeParseException exc) {
-      log.warn("Unable to parse year {}", year);
+      log.error("Unable to parse year {}", year);
       throw new MalformedYearException();
     }
   }
@@ -78,6 +85,7 @@ public class DealershipServiceImpl implements DealershipService {
           yearHighParsed);
       return carRepository.findByYearRange(yearLowParsed, yearHighParsed);
     } catch (DateTimeParseException exc) {
+      log.error("Unable to parse year {} or year {}", yearLowInclusive, yearHighInclusive);
       throw new MalformedYearException();
     }
   }
@@ -85,7 +93,7 @@ public class DealershipServiceImpl implements DealershipService {
   @Override
   public List<Car> findInCostRange(long costLowInclusive, long costHighInclusive) {
     if (costLowInclusive > costHighInclusive) {
-      log.warn("Provided invalid cost interval: [{},{}]", costLowInclusive, costHighInclusive);
+      log.error("Provided invalid cost interval: [{},{}]", costLowInclusive, costHighInclusive);
       throw new IllegalArgumentException(
           "Provide a smaller bound and a higher bound for cost. Given: "
               + costLowInclusive

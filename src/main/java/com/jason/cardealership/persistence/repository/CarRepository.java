@@ -1,4 +1,4 @@
-package com.jason.cardealership.persistence.model.repository;
+package com.jason.cardealership.persistence.repository;
 
 import com.jason.cardealership.persistence.model.Car;
 

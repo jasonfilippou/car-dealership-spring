@@ -1,10 +1,13 @@
-package com.jason.cardealership;
+package com.jason.cardealership.service;
 
 import com.jason.cardealership.persistence.model.Car;
 
 import java.util.List;
 
+
 public interface DealershipService {
+
+  Long getRevenue();
 
   void sell(Car car);
 

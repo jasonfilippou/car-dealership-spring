@@ -1,9 +1,10 @@
-package com.jason.cardealership.persistence.model.repository.impl;
+package com.jason.cardealership.persistence.repository;
 
 import com.google.common.collect.Lists;
 import com.jason.cardealership.persistence.model.Car;
-import com.jason.cardealership.persistence.model.repository.CarRepository;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Profile;
+import org.springframework.stereotype.Repository;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -11,6 +12,8 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Slf4j
+@Repository
+@Profile("dev")
 public class CarRepositoryImpl implements CarRepository {
 
   private final ArrayList<Car> cars = Lists.newArrayList();
